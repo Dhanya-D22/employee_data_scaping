@@ -64,7 +64,7 @@ class EmployeeScraper:
         return processed_employees
     
     def save_json(self, data, file_path):
-        """Helper function to save data as a JSON file."""
+        
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w", encoding="utf-8") as json_file:
             json.dump(data, json_file, indent=4)
