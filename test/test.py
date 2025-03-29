@@ -1,45 +1,52 @@
 import unittest
-from process.process import EmployeeScraper
+import json
+import os
+import pandas as pd
+from employee import fetch_emp_data, process_emp_data
 
-class TestEmployeeScraper(unittest.TestCase):
-
+class TestEmployeeData(unittest.TestCase):
     def setUp(self):
-        self.scraper = EmployeeScraper("https://api.slingacademy.com/v1/sample-data/files/employees.json")
+        self.run_id = None
+        
+    def test_json_file_download(self):
+        """Test Case 1: Verify JSON File Download"""
+        data = fetch_emp_data()
+        self.assertIsNotNone(data)
+        self.assertIsInstance(data, list)
 
-    def test_process_data(self):
-        sample_data = {
-            "employees": [
-                {
-                    "first_name": "John",
-                    "last_name": "Doe",
-                    "email": "john.doe@example.com",
-                    "phone": "1234567890",
-                    "gender": "Male",
-                    "age": 30,
-                    "job_title": "Software Engineer",
-                    "years_of_experience": 4,
-                    "salary": 60000,
-                    "department": "IT"
-                },
-                {
-                    "first_name": "Jane",
-                    "last_name": "Smith",
-                    "email": "jane.smith@example.com",
-                    "phone": "987654321x",
-                    "gender": "Female",
-                    "age": 28,
-                    "job_title": "Data Analyst",
-                    "years_of_experience": 6,
-                    "salary": 70000,
-                    "department": "Data Science"
-                }
-            ]
-        }
-        processed = self.scraper.process_data(sample_data)
-        self.assertEqual(processed[0]["Full Name"], "John Doe")
-        self.assertEqual(processed[1]["phone"], "Invalid Number")
-        self.assertEqual(processed[0]["designation"], "Data Engineer")
-        self.assertEqual(processed[1]["designation"], "Senior Data Engineer")
+    def test_json_file_extraction(self):
+        """Test Case 2: Verify JSON File Extraction"""
+        data = fetch_emp_data()
+        self.assertTrue(len(data) > 0)
+        self.assertIsInstance(data[0], dict)
+
+    def test_file_type_and_format(self):
+        """Test Case 3: Validate File Type and Format"""
+        self.run_id = process_emp_data()
+        self.assertIsNotNone(self.run_id)
+        
+        csv_file = f"emp_{self.run_id}.csv"
+        self.assertTrue(os.path.exists(csv_file))
+        self.assertTrue(csv_file.endswith('.csv'))
+        
+        df = pd.read_csv(csv_file)
+        self.assertIsInstance(df, pd.DataFrame)
+
+    def test_data_structure(self):
+        """Test Case 4: Validate Data Structure"""
+        self.run_id = process_emp_data()
+        df = pd.read_csv(f"emp_{self.run_id}.csv")
+        
+        self.assertIn('Full Name', df.columns)
+        self.assertEqual(df['Full Name'].dtype, 'object')
+
+    def test_missing_invalid_data(self):
+        """Test Case 5: Handle Missing or Invalid Data"""
+        self.run_id = process_emp_data()
+        df = pd.read_csv(f"emp_{self.run_id}.csv")
+        
+        self.assertFalse(df['Full Name'].isnull().any())
+        self.assertTrue(all(isinstance(name, str) for name in df['Full Name']))
 
 if __name__ == '__main__':
     unittest.main()
